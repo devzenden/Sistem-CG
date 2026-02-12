@@ -1,3 +1,4 @@
+import { sgcApi } from "@/api/SgcApi";
 import type { AuthResponse } from "../interfaces/auth.response";
 
 export const checkAuthAction = async():Promise<AuthResponse> => {
@@ -5,7 +6,7 @@ export const checkAuthAction = async():Promise<AuthResponse> => {
     if(!token) throw new Error('No token found');
 
     try {
-      const {data} = await tesloApi.get<AuthResponse>('/auth/check-status')
+      const {data} = await sgcApi.get<AuthResponse>('/auth/check-status')
     localStorage.setItem('token',data.token);
     return data;
     

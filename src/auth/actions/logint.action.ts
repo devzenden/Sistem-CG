@@ -1,8 +1,10 @@
+import { sgcApi } from "@/api/SgcApi";
+import type { AuthResponse } from "../interfaces/auth.response";
 
 export const loginAction = async(email: string ,password:string):Promise<AuthResponse> =>
     {
         try {
-            const { data } = await tesloApi.post('/auth/login',{
+            const { data } = await sgcApi.post('/auth/login',{
                 email:email,
                 password:password,
             });

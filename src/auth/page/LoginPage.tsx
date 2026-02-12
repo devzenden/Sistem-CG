@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../store/auth.store";
+import { cn } from "@/lib/utils";
 
  
 
@@ -60,21 +61,21 @@ export const LoginPage = ({ className, ...props }: React.ComponentProps<"div">) 
               className="mx-auto"
             />
           </div>
-
+          {/* {cn("w-full max-w-sm", className)}  */}
           {/* Form Container */}
-          <div className="w-full max-w-sm">
+          <div className= "flex flex-col gap-6" {...props} >
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">
               Iniciar Sesión
             </h1>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-6">
               {/* Email Input */}
               <div>
                 <input
+                  id="email" 
+                  name="email" 
                   type="email"
                   placeholder="correo@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:border-transparent text-gray-700 placeholder-gray-400 transition"
                   style={{
@@ -92,10 +93,10 @@ export const LoginPage = ({ className, ...props }: React.ComponentProps<"div">) 
               {/* Password Input */}
               <div>
                 <input
+                  id="password" 
+                  name="password" 
                   type="password"
                   placeholder="•••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:border-transparent text-gray-700 placeholder-gray-400 transition"
                   style={{
