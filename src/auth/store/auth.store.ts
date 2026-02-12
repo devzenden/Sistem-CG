@@ -1,4 +1,7 @@
+import type { User } from "@/interfaces/user.interface";
 import { create } from "zustand";
+import { loginAction } from "../actions/logint.action";
+import { checkAuthAction } from "../actions/check-auth";
 
 type AuthStatus = 'authenticated'| 'not-authenticated'| 'checking';
 
