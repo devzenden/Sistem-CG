@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button"
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../store/auth.store";
-import { cn } from "@/lib/utils";
 
  
 
@@ -27,10 +26,15 @@ export const LoginPage = ({ className, ...props }: React.ComponentProps<"div">) 
        const isValid = await login(email,password);
     
       if(isValid){
-        navigate('/');
+        navigate('/central/socios');
         return;
       }
+
+    setIsPosting(false);
+    console.log({email , password});
     }
+
+
   return (
      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #f5f5f5 0%, #78c79e 100%)' }}>
       {/* Main Container */}
@@ -116,8 +120,7 @@ export const LoginPage = ({ className, ...props }: React.ComponentProps<"div">) 
                 type="submit"
                 className="w-full text-white font-semibold py-3 rounded-full transition duration-200"
                 style={{ backgroundColor: '#78c79e' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5da87b'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#78c79e'}
+                 disabled= {isPosting}
               >
                 Iniciar sesión
               </Button>
