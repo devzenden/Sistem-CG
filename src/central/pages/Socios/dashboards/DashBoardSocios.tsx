@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -176,6 +177,59 @@ function MultiSelectCombobox({
 /* -------------------------------------------------- */
 
 const dataByStatus = {
+  todos: {
+    organizaciones: 976,
+    beneficiarios: 104822,
+    promedio: 107,
+    institutionType: [
+      { name: "COMEDOR", value: 755, color: "hsl(160, 84%, 39%)" },
+      { name: "OLLA COMUN", value: 115, color: "hsl(199, 89%, 48%)" },
+      { name: "ALBERGUE", value: 56, color: "hsl(38, 92%, 50%)" },
+      { name: "INTERMEDIARIA", value: 26, color: "hsl(246, 65%, 57%)" },
+      { name: "ACOMP. SOCIAL", value: 17, color: "hsl(0, 84%, 60%)" },
+      { name: "SERV. EDUCATIVO", value: 7, color: "hsl(280, 60%, 55%)" },
+    ],
+    ageDistribution: [
+      { label: "Menor 2 anos", color: "hsl(160, 84%, 39%)", pct: 5 },
+      { label: "3-5 anos", color: "hsl(0, 84%, 60%)", pct: 10 },
+      { label: "6-11 anos", color: "hsl(38, 92%, 50%)", pct: 17 },
+      { label: "12-17 anos", color: "hsl(246, 65%, 57%)", pct: 14 },
+      { label: "18-29 anos", color: "hsl(199, 89%, 48%)", pct: 20 },
+      { label: "30-59 anos", color: "hsl(210, 40%, 50%)", pct: 26 },
+      { label: "60 anos a mas", color: "hsl(0, 0%, 30%)", pct: 8 },
+    ],
+    orgList: [
+      { code: "OA-000057", name: "WESTFALIA KINDERDORF ASOCIACION PERUANA", tipo: "organizacion" },
+      { code: "CC-000157", name: "VIRGEN DEL ROSARIO DE TOPARA", tipo: "comunidades" },
+      { code: "OS-000046", name: "VILLA SIN FRONTERAS", tipo: "organizacion" },
+      { code: "OA-000284", name: "SOLIDARIDAD EN MARCHA", tipo: "organizacion" },
+      { code: "CC-000321", name: "SAN JOSE OBRERO", tipo: "comunidades" },
+      { code: "OA-000112", name: "FUNDACION NUEVA ESPERANZA", tipo: "organizacion" },
+      { code: "CC-000245", name: "ASOCIACION CORAZON SOLIDARIO", tipo: "comunidades" },
+      { code: "OS-000089", name: "CENTRO COMUNITARIO LUZ DEL SUR", tipo: "organizacion" },
+    ],
+    alumbrado: [
+      { name: "ELECTRICIDAD CONEXION DIRECTA", value: 753, color: "hsl(45, 93%, 58%)" },
+      { name: "ELECTRICIDAD CONEXION EXTERNA", value: 146, color: "hsl(45, 93%, 58%)" },
+      { name: "LAMPARA A KEROSENE/LAMP...", value: 4, color: "hsl(45, 93%, 68%)" },
+      { name: "NO CUENTAN CON NINGUN T...", value: 89, color: "hsl(45, 93%, 48%)" },
+      { name: "PANELES DE ENERGIA SOLAR", value: 4, color: "hsl(45, 93%, 68%)" },
+    ],
+    abastecimientoAgua: [
+      { name: "RED PUB. DENTRO DE LAS INST...", value: 702, color: "hsl(199, 89%, 48%)" },
+      { name: "PILON DE USO PUB./AGUA D...", value: 113, color: "hsl(199, 89%, 48%)" },
+      { name: "CAMION CISTERNA", value: 103, color: "hsl(199, 70%, 58%)" },
+      { name: "RED PUB. FUERA DE LAS INST...", value: 58, color: "hsl(199, 70%, 68%)" },
+      { name: "POZO, ACEQUIA, MANANTIAL...", value: 20, color: "hsl(199, 70%, 78%)" },
+    ],
+    desague: [
+      { name: "RED PUB. DE DESAGUE DENT...", value: 707, color: "hsl(210, 50%, 40%)" },
+      { name: "A CAMPO ABIERTO/NO TIENE", value: 160, color: "hsl(0, 70%, 55%)" },
+      { name: "POZO CIEGO O NEGRO - SILO", value: 74, color: "hsl(210, 50%, 55%)" },
+      { name: "RED PUB. DE DESAGUE FUERA...", value: 50, color: "hsl(210, 50%, 65%)" },
+      { name: "POZO SEPTICO", value: 5, color: "hsl(210, 50%, 75%)" },
+    ],
+  },
   activa: {
     organizaciones: 834,
     beneficiarios: 92482,
@@ -286,6 +340,13 @@ interface ZoneRecord {
 }
 
 const zonasByStatus: Record<string, ZoneRecord[]> = {
+  todos: [
+    { id: "callao", label: "CALLAO", orgCount: 146, benefCount: 15100 },
+    { id: "lima_centro", label: "LIMA CENTRO", orgCount: 253, benefCount: 27900 },
+    { id: "lima_este", label: "LIMA ESTE", orgCount: 208, benefCount: 22500 },
+    { id: "lima_norte", label: "LIMA NORTE", orgCount: 228, benefCount: 24200 },
+    { id: "lima_sur", label: "LIMA SUR", orgCount: 141, benefCount: 15122 },
+  ],
   activa: [
     { id: "callao", label: "CALLAO", orgCount: 124, benefCount: 13200 },
     { id: "lima_centro", label: "LIMA CENTRO", orgCount: 215, benefCount: 24500 },
@@ -305,6 +366,43 @@ const zonasByStatus: Record<string, ZoneRecord[]> = {
 /* Distrito master data by status */
 
 const distritosByStatus: Record<string, ComboboxOption[]> = {
+  todos: [
+    { id: "ancon", label: "ANCON" },
+    { id: "ate", label: "ATE" },
+    { id: "barranco", label: "BARRANCO" },
+    { id: "breña", label: "BRENA" },
+    { id: "carabayllo", label: "CARABAYLLO" },
+    { id: "cercado", label: "CERCADO DE LIMA" },
+    { id: "chaclacayo", label: "CHACLACAYO" },
+    { id: "chorrillos", label: "CHORRILLOS" },
+    { id: "cieneguilla", label: "CIENEGUILLA" },
+    { id: "comas", label: "COMAS" },
+    { id: "el_agustino", label: "EL AGUSTINO" },
+    { id: "independencia", label: "INDEPENDENCIA" },
+    { id: "la_molina", label: "LA MOLINA" },
+    { id: "la_victoria", label: "LA VICTORIA" },
+    { id: "lince", label: "LINCE" },
+    { id: "los_olivos", label: "LOS OLIVOS" },
+    { id: "lurin", label: "LURIN" },
+    { id: "miraflores", label: "MIRAFLORES" },
+    { id: "pachacamac", label: "PACHACAMAC" },
+    { id: "pucusana", label: "PUCUSANA" },
+    { id: "rimac", label: "RIMAC" },
+    { id: "san_borja", label: "SAN BORJA" },
+    { id: "san_isidro", label: "SAN ISIDRO" },
+    { id: "san_juan_lurigancho", label: "SAN JUAN DE LURIGANCHO" },
+    { id: "san_juan_miraflores", label: "SAN JUAN DE MIRAFLORES" },
+    { id: "san_martin_porres", label: "SAN MARTIN DE PORRES" },
+    { id: "san_miguel", label: "SAN MIGUEL" },
+    { id: "santa_anita", label: "SANTA ANITA" },
+    { id: "surco", label: "SANTIAGO DE SURCO" },
+    { id: "surquillo", label: "SURQUILLO" },
+    { id: "villa_el_salvador", label: "VILLA EL SALVADOR" },
+    { id: "villa_maria_triunfo", label: "VILLA MARIA DEL TRIUNFO" },
+    { id: "callao_d", label: "CALLAO" },
+    { id: "bellavista", label: "BELLAVISTA" },
+    { id: "ventanilla", label: "VENTANILLA" },
+  ],
   activa: [
     { id: "ancon", label: "ANCON" },
     { id: "ate", label: "ATE" },
@@ -363,6 +461,14 @@ const distritosByStatus: Record<string, ComboboxOption[]> = {
 /* Tipo de Institucion master data by status */
 
 const tipoInstByStatus: Record<string, ComboboxOption[]> = {
+  todos: [
+    { id: "comedor", label: "COMEDOR" },
+    { id: "olla_comun", label: "OLLA COMUN" },
+    { id: "albergue", label: "ALBERGUE" },
+    { id: "intermediaria", label: "INTERMEDIARIA" },
+    { id: "acomp_social", label: "ACOMP. SOCIAL" },
+    { id: "serv_educativo", label: "SERV. EDUCATIVO" },
+  ],
   activa: [
     { id: "comedor", label: "COMEDOR" },
     { id: "olla_comun", label: "OLLA COMUN" },
@@ -381,7 +487,7 @@ const tipoInstByStatus: Record<string, ComboboxOption[]> = {
   ],
 }
 
-type StatusType = "activa" | "no_activa"
+type StatusType = "todos" | "activa" | "no_activa"
 type GfnType = "todos" | "comunidades" | "organizacion"
 
 /* -------------------------------------------------- */
@@ -390,7 +496,7 @@ type GfnType = "todos" | "comunidades" | "organizacion"
 
 export function DashBoardSocios() {
   const [filtersOpen, setFiltersOpen] = useState(true)
-  const [status, setStatus] = useState<StatusType>("activa")
+  const [status, setStatus] = useState<StatusType>("todos")
   const [selectedZones, setSelectedZones] = useState<string[]>([])
   const [selectedDistritos, setSelectedDistritos] = useState<string[]>([])
   const [selectedTipoInst, setSelectedTipoInst] = useState<string[]>([])
@@ -415,7 +521,7 @@ export function DashBoardSocios() {
   }
 
   const handleClearAll = () => {
-    setStatus("activa")
+    setStatus("todos")
     setSelectedZones([])
     setSelectedDistritos([])
     setSelectedTipoInst([])
@@ -591,8 +697,18 @@ export function DashBoardSocios() {
                 </p>
                 <div className="flex gap-2">
                   <button
+                    onClick={() => handleStatusChange("todos")}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                      status === "todos"
+                        ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                        : "bg-card text-card-foreground border-border hover:border-primary/40"
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  <button
                     onClick={() => handleStatusChange("activa")}
-                    className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
                       status === "activa"
                         ? "bg-[hsl(160,84%,39%)] text-white border-[hsl(160,84%,39%)] shadow-md shadow-[hsl(160,84%,39%)]/20"
                         : "bg-card text-card-foreground border-border hover:border-[hsl(160,84%,39%)]/40"
@@ -602,7 +718,7 @@ export function DashBoardSocios() {
                   </button>
                   <button
                     onClick={() => handleStatusChange("no_activa")}
-                    className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
                       status === "no_activa"
                         ? "bg-[hsl(0,84%,60%)] text-white border-[hsl(0,84%,60%)] shadow-md shadow-[hsl(0,84%,60%)]/20"
                         : "bg-card text-card-foreground border-border hover:border-[hsl(0,84%,60%)]/40"
