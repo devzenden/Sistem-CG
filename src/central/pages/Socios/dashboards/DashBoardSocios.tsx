@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -75,7 +76,7 @@ function MultiSelectCombobox({
         {/* Input area with chips */}
         <div
           onClick={() => setOpen(!open)}
-          className="min-h-[42px] w-full rounded-lg border-2 border-border bg-card px-2 py-1.5 flex flex-wrap items-center gap-1.5 cursor-pointer hover:border-primary/40 transition-colors"
+          className="min-h-10.5 w-full rounded-lg border-2 border-border bg-card px-2 py-1.5 flex flex-wrap items-center gap-1.5 cursor-pointer hover:border-primary/40 transition-colors"
         >
           {selected.length > 0 ? (
             selected.map((sId) => {
@@ -516,6 +517,13 @@ const distritosByZone: Record<string, string[]> = {
   ],
 }
 
+/* GFN filters which zones are visible in the dropdown */
+const zonasByGfn: Record<string, string[]> = {
+  todos: ["callao", "lima_centro", "lima_este", "lima_norte", "lima_sur"],
+  comunidades: ["callao", "lima_norte"],
+  organizacion: ["lima_centro", "lima_este", "lima_sur"],
+}
+
 type StatusType = "todos" | "activa" | "no_activa"
 type GfnType = "todos" | "comunidades" | "organizacion"
 
@@ -523,7 +531,7 @@ type GfnType = "todos" | "comunidades" | "organizacion"
 /* Main Dashboard Component                            */
 /* -------------------------------------------------- */
 
-export function FoodDashboard() {
+export function DashBoardSocios() {
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [status, setStatus] = useState<StatusType>("todos")
   const [selectedZones, setSelectedZones] = useState<string[]>([])
@@ -533,29 +541,44 @@ export function FoodDashboard() {
   const [searchQuery, setSearchQuery] = useState("")
 
   const baseData = dataByStatus[status]
-  const availableZones = zonasByStatus[status]
+  const allZonesForStatus = zonasByStatus[status]
   const allDistritos = distritosByStatus[status]
   const allTipoInst = tipoInstByStatus[status]
 
-  // GFN filters which Tipo de Institucion options are available
-  const comunidadesTypes = new Set(["comedor", "olla_comun"])
+  // GFN filters which Tipo de Institucion appear in the dropdown
+  const comunidadesTypeIds = new Set(["comedor", "olla_comun"])
   const availableTipoInst = useMemo(() => {
     if (gfnType === "todos") return allTipoInst
-    if (gfnType === "comunidades") return allTipoInst.filter((t) => comunidadesTypes.has(t.id))
-    // organizacion = everything except comunidades types
-    return allTipoInst.filter((t) => !comunidadesTypes.has(t.id))
+    if (gfnType === "comunidades") return allTipoInst.filter((t) => comunidadesTypeIds.has(t.id))
+    return allTipoInst.filter((t) => !comunidadesTypeIds.has(t.id))
   }, [gfnType, allTipoInst])
 
-  // Filter available districts based on selected zones
+  // GFN filters which zones appear in the dropdown (respecting current estado BAP)
+  const availableZones = useMemo(() => {
+    const allowedZoneIds = zonasByGfn[gfnType] || zonasByGfn.todos
+    return allZonesForStatus.filter((z) => allowedZoneIds.includes(z.id))
+  }, [gfnType, allZonesForStatus])
+
+  // Zona + GFN filter which districts appear in the dropdown
   const availableDistritos = useMemo(() => {
-    if (selectedZones.length === 0) return allDistritos
-    const allowedIds = new Set<string>()
+    // First limit districts to GFN-allowed zones
+    const allowedZoneIds = zonasByGfn[gfnType] || zonasByGfn.todos
+    const gfnDistrictIds = new Set<string>()
+    for (const zoneId of allowedZoneIds) {
+      const ids = distritosByZone[zoneId]
+      if (ids) ids.forEach((id) => gfnDistrictIds.add(id))
+    }
+    const gfnFiltered = allDistritos.filter((d) => gfnDistrictIds.has(d.id))
+
+    // Then narrow by selected zones if any
+    if (selectedZones.length === 0) return gfnFiltered
+    const zoneDistrictIds = new Set<string>()
     for (const zoneId of selectedZones) {
       const ids = distritosByZone[zoneId]
-      if (ids) ids.forEach((id) => allowedIds.add(id))
+      if (ids) ids.forEach((id) => zoneDistrictIds.add(id))
     }
-    return allDistritos.filter((d) => allowedIds.has(d.id))
-  }, [selectedZones, allDistritos])
+    return gfnFiltered.filter((d) => zoneDistrictIds.has(d.id))
+  }, [gfnType, selectedZones, allDistritos])
 
   const toggleItem = (
     list: string[],
@@ -565,7 +588,17 @@ export function FoodDashboard() {
     setList(list.includes(id) ? list.filter((v) => v !== id) : [...list, id])
   }
 
-  // When zones change, remove selected districts that are no longer valid
+  // Auto-clean zones that are no longer valid (when GFN or status changes)
+  const prevZonesRef = useRef(availableZones)
+  useEffect(() => {
+    if (prevZonesRef.current !== availableZones) {
+      prevZonesRef.current = availableZones
+      const validIds = new Set(availableZones.map((z) => z.id))
+      setSelectedZones((prev) => prev.filter((id) => validIds.has(id)))
+    }
+  }, [availableZones])
+
+  // Auto-clean districts that are no longer valid (when zones, GFN or status changes)
   const prevDistritosRef = useRef(availableDistritos)
   useEffect(() => {
     if (prevDistritosRef.current !== availableDistritos) {
@@ -575,7 +608,7 @@ export function FoodDashboard() {
     }
   }, [availableDistritos])
 
-  // When GFN changes, remove selected tipo inst that are no longer valid
+  // Auto-clean tipo inst that are no longer valid (when GFN or status changes)
   const prevTipoInstRef = useRef(availableTipoInst)
   useEffect(() => {
     if (prevTipoInstRef.current !== availableTipoInst) {
@@ -585,23 +618,17 @@ export function FoodDashboard() {
     }
   }, [availableTipoInst])
 
+  // All filter changes are simple -- no cascading resets
   const handleStatusChange = (newStatus: StatusType) => {
     setStatus(newStatus)
-    // Reset all dependent filters when status changes
-    setSelectedZones([])
-    setSelectedDistritos([])
-    setSelectedTipoInst([])
-    setGfnType("todos")
   }
 
   const handleGfnChange = (newGfn: GfnType) => {
     setGfnType(newGfn)
-    // GFN affects tipo inst options - invalid selections cleaned by useEffect
   }
 
   const handleZoneToggle = (id: string) => {
     toggleItem(selectedZones, setSelectedZones, id)
-    // Zona affects distrito options - invalid selections cleaned by useEffect
   }
 
   const handleDistritoToggle = (id: string) => {
@@ -1068,7 +1095,7 @@ export function FoodDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto max-h-85 overflow-y-auto">
+            <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-card z-10">
                   <tr className="border-b border-border bg-muted/50">
@@ -1120,7 +1147,7 @@ export function FoodDashboard() {
             <div className="flex flex-col gap-3">
               {filteredAlumbrado.map((item) => (
                 <div key={item.name} className="flex items-center gap-3">
-                  <span className="text-[10px] text-muted-foreground w-35 shrink-0 text-right leading-tight">
+                  <span className="text-[10px] text-muted-foreground w-[140px] shrink-0 text-right leading-tight">
                     {item.name}
                   </span>
                   <div className="flex-1 flex items-center gap-2">
@@ -1163,7 +1190,7 @@ export function FoodDashboard() {
             <div className="flex flex-col gap-3">
               {filteredAbastecimientoAgua.map((item) => (
                 <div key={item.name} className="flex items-center gap-3">
-                  <span className="text-[10px] text-muted-foreground w-35 shrink-0 text-right leading-tight">
+                  <span className="text-[10px] text-muted-foreground w-[140px] shrink-0 text-right leading-tight">
                     {item.name}
                   </span>
                   <div className="flex-1 flex items-center gap-2">
@@ -1208,7 +1235,7 @@ export function FoodDashboard() {
             <div className="flex flex-col gap-3">
               {filteredDesague.map((item) => (
                 <div key={item.name} className="flex items-center gap-3">
-                  <span className="text-[10px] text-muted-foreground w-35 shrink-0 text-right leading-tight">
+                  <span className="text-[10px] text-muted-foreground w-[140px] shrink-0 text-right leading-tight">
                     {item.name}
                   </span>
                   <div className="flex-1 flex items-center gap-2">
