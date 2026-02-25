@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -76,7 +75,7 @@ function MultiSelectCombobox({
         {/* Input area with chips */}
         <div
           onClick={() => setOpen(!open)}
-          className="min-h-10.5 w-full rounded-lg border-2 border-border bg-card px-2 py-1.5 flex flex-wrap items-center gap-1.5 cursor-pointer hover:border-primary/40 transition-colors"
+          className="min-h-[42px] w-full rounded-lg border-2 border-border bg-card px-2 py-1.5 flex flex-wrap items-center gap-1.5 cursor-pointer hover:border-primary/40 transition-colors"
         >
           {selected.length > 0 ? (
             selected.map((sId) => {
@@ -402,6 +401,9 @@ const distritosByStatus: Record<string, ComboboxOption[]> = {
     { id: "callao_d", label: "CALLAO" },
     { id: "bellavista", label: "BELLAVISTA" },
     { id: "ventanilla", label: "VENTANILLA" },
+    { id: "mi_peru", label: "MI PERU" },
+    { id: "carmen_legua", label: "CARMEN DE LA LEGUA" },
+    { id: "la_perla", label: "LA PERLA" },
   ],
   activa: [
     { id: "ancon", label: "ANCON" },
@@ -439,6 +441,9 @@ const distritosByStatus: Record<string, ComboboxOption[]> = {
     { id: "callao_d", label: "CALLAO" },
     { id: "bellavista", label: "BELLAVISTA" },
     { id: "ventanilla", label: "VENTANILLA" },
+    { id: "mi_peru", label: "MI PERU" },
+    { id: "carmen_legua", label: "CARMEN DE LA LEGUA" },
+    { id: "la_perla", label: "LA PERLA" },
   ],
   no_activa: [
     { id: "ate", label: "ATE" },
@@ -455,6 +460,9 @@ const distritosByStatus: Record<string, ComboboxOption[]> = {
     { id: "villa_el_salvador", label: "VILLA EL SALVADOR" },
     { id: "callao_d", label: "CALLAO" },
     { id: "ventanilla", label: "VENTANILLA" },
+    { id: "mi_peru", label: "MI PERU" },
+    { id: "carmen_legua", label: "CARMEN DE LA LEGUA" },
+    { id: "la_perla", label: "LA PERLA" },
   ],
 }
 
@@ -487,6 +495,27 @@ const tipoInstByStatus: Record<string, ComboboxOption[]> = {
   ],
 }
 
+/* Mapping: which districts belong to each zone */
+const distritosByZone: Record<string, string[]> = {
+  callao: ["callao_d", "bellavista", "ventanilla", "mi_peru", "carmen_legua", "la_perla"],
+  lima_centro: [
+    "cercado", "breña", "la_victoria", "lince", "rimac", "san_miguel",
+    "barranco", "miraflores", "san_borja", "san_isidro", "surquillo", "surco",
+  ],
+  lima_este: [
+    "ate", "chaclacayo", "cieneguilla", "el_agustino", "la_molina",
+    "san_juan_lurigancho", "santa_anita",
+  ],
+  lima_norte: [
+    "ancon", "carabayllo", "comas", "independencia", "los_olivos",
+    "san_martin_porres",
+  ],
+  lima_sur: [
+    "chorrillos", "lurin", "pachacamac", "pucusana",
+    "san_juan_miraflores", "villa_el_salvador", "villa_maria_triunfo",
+  ],
+}
+
 type StatusType = "todos" | "activa" | "no_activa"
 type GfnType = "todos" | "comunidades" | "organizacion"
 
@@ -494,7 +523,7 @@ type GfnType = "todos" | "comunidades" | "organizacion"
 /* Main Dashboard Component                            */
 /* -------------------------------------------------- */
 
-export function DashBoardSocios() {
+export function FoodDashboard() {
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [status, setStatus] = useState<StatusType>("todos")
   const [selectedZones, setSelectedZones] = useState<string[]>([])
@@ -505,8 +534,28 @@ export function DashBoardSocios() {
 
   const baseData = dataByStatus[status]
   const availableZones = zonasByStatus[status]
-  const availableDistritos = distritosByStatus[status]
-  const availableTipoInst = tipoInstByStatus[status]
+  const allDistritos = distritosByStatus[status]
+  const allTipoInst = tipoInstByStatus[status]
+
+  // GFN filters which Tipo de Institucion options are available
+  const comunidadesTypes = new Set(["comedor", "olla_comun"])
+  const availableTipoInst = useMemo(() => {
+    if (gfnType === "todos") return allTipoInst
+    if (gfnType === "comunidades") return allTipoInst.filter((t) => comunidadesTypes.has(t.id))
+    // organizacion = everything except comunidades types
+    return allTipoInst.filter((t) => !comunidadesTypes.has(t.id))
+  }, [gfnType, allTipoInst])
+
+  // Filter available districts based on selected zones
+  const availableDistritos = useMemo(() => {
+    if (selectedZones.length === 0) return allDistritos
+    const allowedIds = new Set<string>()
+    for (const zoneId of selectedZones) {
+      const ids = distritosByZone[zoneId]
+      if (ids) ids.forEach((id) => allowedIds.add(id))
+    }
+    return allDistritos.filter((d) => allowedIds.has(d.id))
+  }, [selectedZones, allDistritos])
 
   const toggleItem = (
     list: string[],
@@ -516,8 +565,47 @@ export function DashBoardSocios() {
     setList(list.includes(id) ? list.filter((v) => v !== id) : [...list, id])
   }
 
+  // When zones change, remove selected districts that are no longer valid
+  const prevDistritosRef = useRef(availableDistritos)
+  useEffect(() => {
+    if (prevDistritosRef.current !== availableDistritos) {
+      prevDistritosRef.current = availableDistritos
+      const validIds = new Set(availableDistritos.map((d) => d.id))
+      setSelectedDistritos((prev) => prev.filter((id) => validIds.has(id)))
+    }
+  }, [availableDistritos])
+
+  // When GFN changes, remove selected tipo inst that are no longer valid
+  const prevTipoInstRef = useRef(availableTipoInst)
+  useEffect(() => {
+    if (prevTipoInstRef.current !== availableTipoInst) {
+      prevTipoInstRef.current = availableTipoInst
+      const validIds = new Set(availableTipoInst.map((t) => t.id))
+      setSelectedTipoInst((prev) => prev.filter((id) => validIds.has(id)))
+    }
+  }, [availableTipoInst])
+
   const handleStatusChange = (newStatus: StatusType) => {
     setStatus(newStatus)
+    // Reset all dependent filters when status changes
+    setSelectedZones([])
+    setSelectedDistritos([])
+    setSelectedTipoInst([])
+    setGfnType("todos")
+  }
+
+  const handleGfnChange = (newGfn: GfnType) => {
+    setGfnType(newGfn)
+    // GFN affects tipo inst options - invalid selections cleaned by useEffect
+  }
+
+  const handleZoneToggle = (id: string) => {
+    toggleItem(selectedZones, setSelectedZones, id)
+    // Zona affects distrito options - invalid selections cleaned by useEffect
+  }
+
+  const handleDistritoToggle = (id: string) => {
+    toggleItem(selectedDistritos, setSelectedDistritos, id)
   }
 
   const handleClearAll = () => {
@@ -736,7 +824,7 @@ export function DashBoardSocios() {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setGfnType("todos")}
+                    onClick={() => handleGfnChange("todos")}
                     className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
                       gfnType === "todos"
                         ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
@@ -746,7 +834,7 @@ export function DashBoardSocios() {
                     Todos
                   </button>
                   <button
-                    onClick={() => setGfnType("comunidades")}
+                    onClick={() => handleGfnChange("comunidades")}
                     className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
                       gfnType === "comunidades"
                         ? "bg-foreground text-background border-foreground shadow-md"
@@ -756,7 +844,7 @@ export function DashBoardSocios() {
                     Comunidades
                   </button>
                   <button
-                    onClick={() => setGfnType("organizacion")}
+                    onClick={() => handleGfnChange("organizacion")}
                     className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-medium border-2 transition-all ${
                       gfnType === "organizacion"
                         ? "bg-foreground text-background border-foreground shadow-md"
@@ -797,7 +885,7 @@ export function DashBoardSocios() {
                 placeholder="Seleccionar zonas..."
                 options={availableZones.map((z) => ({ id: z.id, label: z.label }))}
                 selected={selectedZones}
-                onToggle={(id) => toggleItem(selectedZones, setSelectedZones, id)}
+                onToggle={(id) => handleZoneToggle(id)}
                 onClear={() => setSelectedZones([])}
               />
 
@@ -807,7 +895,7 @@ export function DashBoardSocios() {
                 placeholder="Seleccionar distritos..."
                 options={availableDistritos}
                 selected={selectedDistritos}
-                onToggle={(id) => toggleItem(selectedDistritos, setSelectedDistritos, id)}
+                onToggle={(id) => handleDistritoToggle(id)}
                 onClear={() => setSelectedDistritos([])}
               />
 
